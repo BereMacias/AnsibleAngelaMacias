@@ -1,0 +1,13 @@
+---
+disable_default: yes
+mysql_root_password: " "
+app_user: "luis"            # Usuario del servidor
+http_host_page_static: "www.larellano.com"      # Nombre del sitio
+http_host_page_app: "app.larellano.com"
+http_conf_static: "www.larellano.com.conf" # Nombre del archivo de configuracion del sitio
+http_conf_app: "app.larellano.com.conf"
+http_port: "80"             # Puerto en el que se habilitar
+name_source_code_static: "curriculum"       # Nombre de la carpeta donde tienes el codigo fuente de la pagina
+name_source_code_app: "login"
+db_name: "usuario"          # Nombre de la base de datos
+file_db: "usuario.sql"      # Nombre del archivo donde tienes el respaldo de la base de datos

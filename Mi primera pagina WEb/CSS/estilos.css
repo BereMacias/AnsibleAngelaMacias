@@ -1,0 +1,58 @@
+body {
+    background: #f5eed8;
+}
+
+h2 {
+    color: #CD5C5C;
+    font-size: 20px;
+}
+
+h1 {
+    font-size: 35px;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+}
+
+P {
+    font-size: 15px;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+}
+
+ul {
+    font-size: 15px;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+}
+
+div {
+    width: 60%;
+    background-color: #f5b7b1;
+    margin: 30px;
+    padding: 30px;
+}
+
+.datos {
+    width: 25%;
+    height: 850px;
+    background-color: #E9967A;
+    margin: 30px;
+    padding: 30px;
+    position: relative;
+    bottom: 940px;
+    right: 200px;
+    left: 900px;
+}
+
+img {
+    width: 50%;
+    height: auto;
+    margin: auto;
+    display: block;
+    border-radius: 15px;
+    border: 3px solid #FFFFFF;
+}
+
+.nombre {
+    width: 60%;
+    background-color: #fdf2e9;
+    margin: 30px;
+    padding: 30px;
+}

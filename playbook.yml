@@ -1,0 +1,134 @@
+#######################################################
+# Playbook para despliegue de aplicacion con LAMP 3.0 #
+#######################################################
+---
+- hosts: server2
+  become: true
+  vars_files:
+    - vars/default.yml
+
+  tasks:
+  # Actualizando paquetes
+    - name: Actualizando paquetes e instlando prerequisitos
+      apt: name={{ item }} update_cache=yes state=latest force_apt_get=yes
+      loop: [ 'aptitude' ]
+
+  # Instalando paquetes
+    - name: Instalando paquetes necesarios para el despliegue de la app
+      apt: name={{ item }} update_cache=yes state=latest
+      loop: [ 'apache2', 'mysql-server', 'python3-pymysql', 'php', 'php-mysql', 'libapache2-mod-php' ]
+
+  # Configuracion de pagina statica
+    - name: Creacion del directorio raiz de la pagina statica
+      file:
+        path: "/var/www/{{ http_host_page_static }}"
+        state: directory
+        owner: "{{ app_user }}"
+        mode: '0755'
+
+    - name: Creando el archivo de configuracion del host virtual de la pagina statica
+      template:
+        src: "files/apache_s.conf.j2"
+        dest: "/etc/apache2/sites-available/{{ http_conf_static }}"
+      notify: Reload Apache
+
+    - name: Habilitando nuestro sitio statico
+      shell: /usr/sbin/a2ensite {{ http_conf_static }}
+      notify: Reload Apache
+
+  # Configuracion de aplicacion web con base de datos
+    - name: Creacion del directorio raiz de la aplicacion web
+      file:
+        path: "/var/www/{{ http_host_page_app }}"
+        state: directory
+        owner: "{{ app_user }}"
+        mode: '0755'
+
+    - name: Creando el archivo de configuracion del host virtual de la aplicacion web
+      template:
+        src: "files/apache_a.conf.j2"
+        dest: "/etc/apache2/sites-available/{{ http_conf_app }}"
+      notify: Reload Apache
+
+
+    - name: Habilitando nuestra aplicacion web
+      shell: /usr/sbin/a2ensite {{ http_conf_app }}
+      notify: Reload Apache
+
+  # Desabilitando el sitio por defecto de Apache
+    - name: Desabilitando el sitio por defecto de Apache
+      shell: /usr/sbin/a2dissite 000-default.conf
+      when: disable_default
+      notify: Reload Apache
+    
+  # Configuracion del firewall
+    - name: "UFW - Abriendo el puerto {{ http_port }}"
+      ufw:
+        rule: allow
+        port: "{{ http_port }}"
+        proto: tcp
+
+  # Moviendo codigo fuente de la pagina web estatica
+    - name: Moviendo codigo fuente de la pagina web statica
+      copy:
+        src: "{{ name_source_code_static }}"
+        dest: "/var/www/{{ http_host_page_static }}"
+
+  # Moviendo codigo fuente de la aplicacion web con base de datos
+    - name: Moviendo codigo fuente de la aplicacion web
+      copy:
+        src: "{{ name_source_code_app }}"
+        dest: "/var/www/{{ http_host_page_app }}"
+
+    # Configurando MYSQL
+    - name: Cambiando la contraseña del usuario root
+      mysql_user:
+        name: root
+        password: "{{ mysql_root_password }}"
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+
+    - name: Removiendo las cuentas anonimas
+      mysql_user:
+        name: ''
+        host_all: yes
+        state: absent
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+
+    - name: Removiendo las bases de datos de prueba
+      mysql_db:
+        name: test
+        state: absent
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+
+    - name: Creacion de la base de datos
+      mysql_db:
+        name: '{{ db_name }}' 
+        state: present
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+
+    - name: Agregar el archivo de datos sql
+      copy:
+        src: '{{ file_db }}'
+        dest: '/tmp/{{ file_db }}'
+
+    - name: Insertando los datos a la base de datos
+      mysql_db:
+        name: '{{ db_name }}'
+        state: import
+        target: '/tmp/{{ file_db }}'
+        login_user: root
+        login_password: "{{ mysql_root_password }}"
+
+  handlers:
+    - name: Reload Apache
+      service:
+        name: apache2
+        state: reloaded
+
+    - name: Restart Apache
+      service:
+        name: apache2
+        state: restarted
